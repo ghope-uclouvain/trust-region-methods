@@ -11,11 +11,10 @@ typedef struct {
 // constructor
 int tr_method_template_init(
     tr_method_template *solver,
-    size_t n,                   
-    opt_tr_fun_t fun,
-    opt_tr_grad_t grad,
-    opt_tr_hess_vec_t hess_vec,
-    void *userdata
+    size_t n,                    // dimension of the problem
+    long double x_k,             // initial value of x
+    opt_tr_fun_t fun,            // objective function
+    opt_tr_constraints_t cons   // constraint function
 );
 
 // destructor

@@ -33,9 +33,6 @@ int opt_tr_init(
 
     tr->n         = n;
     tr->fun       = fun;
-    tr->grad      = grad;
-    tr->hess_vec  = hess_vec;
-    tr->userdata  = userdata;
     tr->vptr      = NULL;      // to be defined by the solver
 
     // default values
@@ -49,12 +46,12 @@ int opt_tr_init(
     tr->radius = tr->config.starting_radius;
 
     /* allocate working memory */
-    tr->x    = (double*)calloc(n, sizeof(double));
+    tr->x_k    = (double*)calloc(n, sizeof(double));
     tr->test_x    = (double*)calloc(n, sizeof(double));
     tr->g    = (double*)calloc(n, sizeof(double));
     tr->work = (double*)calloc(n, sizeof(double));
 
-    if (!tr->x || !tr->g || !tr->work) {
+    if (!tr->x_k || !tr->g || !tr->work) {
         opt_tr_free(tr);
         return -1;
     }
@@ -67,11 +64,11 @@ int opt_tr_init(
 void opt_tr_free(opt_tr *tr)
 {
     if (!tr) return;
-    free(tr->x);
+    free(tr->x_k);
     free(tr->g);
     free(tr->work);
 
-    tr->x    = NULL;
+    tr->x_k    = NULL;
     tr->g    = NULL;
     tr->work = NULL;
     tr->vptr = NULL;
@@ -96,19 +93,20 @@ int opt_tr_solve(opt_tr *tr, double *x0, opt_tr_result_t *res)
         print("Beginning solve...\n");
     }
     if (!tr || !x0 || !res || !tr->vptr) {
-        return -1;   /* missing vtable or null inputs */
+        return -1;   // missing vtable or null inputs
     }
 
     const size_t n = tr->n;
 
-    /* copy x0 -> internal state */
-    memcpy(tr->x, x0, n * sizeof(double));
 
-    /* compute f(x0) + gradient */
+    // copy x0 -> internal state 
+    memcpy(tr->x_k, x0, n * sizeof(long double));
+
+    // compute f(x0) + gradient 
     double fx;
     double test_fx;
-    tr->fun(tr->x, &fx, tr->userdata);
-    tr->grad(tr->x, tr->g, tr->userdata);
+    tr->fun(tr->x_k, &fx);
+    // tr->grad(tr->x, tr->g);
 
     double gnorm = 0.0;
 
@@ -160,7 +158,7 @@ int opt_tr_solve(opt_tr *tr, double *x0, opt_tr_result_t *res)
             break;
         }
 
-        tr->fun(tr->test_x, &test_fx, tr->userdata);
+        tr->fun(tr->test_x, &test_fx);
         
         double ratio = (fx - test_fx) / *expected_improvement;
 
@@ -183,8 +181,8 @@ int opt_tr_solve(opt_tr *tr, double *x0, opt_tr_result_t *res)
         }
 
         // recompute f and g
-        tr->fun(tr->x, &fx, tr->userdata);
-        tr->grad(tr->x, tr->g, tr->userdata);
+        tr->fun(tr->x_k, &fx);
+        // tr->grad(tr->x_k, tr->g);
 
 
         if (tr->config.xtol > 0.0) {
@@ -195,13 +193,13 @@ int opt_tr_solve(opt_tr *tr, double *x0, opt_tr_result_t *res)
     // write results
     res->iterations   = iter;
     res->final_radius = tr->radius;
-    res->x = *tr->x;
+    res->x = *tr->x_k;
     res->fval = fx;
     res->time = now_seconds() - t0;
     res->status = 0;
 
     // write final x back into x0
-    memcpy(x0, tr->x, n * sizeof(double));
+    memcpy(x0, tr->x_k, n * sizeof(double));
 
     return 0;
 }

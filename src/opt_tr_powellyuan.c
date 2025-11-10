@@ -60,7 +60,7 @@ int tr_method_template_init(
     memset(solver, 0, sizeof(*solver));
 
     
-    int rc = opt_tr_init(&solver->base, n, fun, grad, hess_vec, userdata);
+    int rc = opt_tr_init(&solver->base, n);
     if (rc != 0)
         return rc;
 

@@ -48,18 +48,16 @@ static const opt_tr_vtable_t MY_VTABLE = {
 int tr_method_template_init(
     tr_method_template *solver,
     size_t n,
-    opt_tr_fun_t fun,
-    opt_tr_grad_t grad,
-    opt_tr_hess_vec_t hess_vec,
-    void *userdata
+    opt_tr_fun_t fun
 )
+
 {
     if (!solver)
         return -1;
 
     memset(solver, 0, sizeof(*solver));
 
-    int rc = opt_tr_init(&solver->base, n, fun, grad, hess_vec, userdata);
+    int rc = opt_tr_init(&solver->base, n);
     if (rc != 0)
         return rc;
 
